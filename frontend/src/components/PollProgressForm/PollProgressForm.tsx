@@ -11,23 +11,23 @@ import { PollContextStore } from '../../contexts/PollContext';
 import { getPollInfo, progressPoll } from '../../api/poll';
 import PollProgressRadioGroup from '../PollProgressRadioGroup/PollProgressRadioGroup';
 import PollProgressButtonGroup from '../PollProgressButtonGroup/PollProgressButtonGroup';
-import { PollInterface, PollItemInterface } from '../../types/poll';
+import { PollInterface } from '../../types/poll';
 
 function PollProgressForm() {
   const navigate = useNavigate();
-  const pollContext = useContext(PollContextStore);
+  // const pollContext = useContext(PollContextStore);
   const [pollInfo, setPollInfo] = useState<PollInterface>();
-  const [selectedPollItem, setSelectedPollItem] = useState<PollItemInterface>();
 
   // TODO: 객체로 state로 관리하는 것에 단점이 분명히 있다. 리팩토링 필요
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
-      if (selectedPollItem && pollInfo) {
+      if (pollInfo) {
         console.log('끝');
-        await progressPoll(pollInfo.id, { itemIds: [selectedPollItem.id] });
-        navigate('/result');
+        console.log(e.currentTarget.elements.namedItem('3'));
+        // await progressPoll(pollInfo.id, { itemIds: [selectedPollItem.id] });
+        // navigate('/result');
       }
     } catch (err) {
       console.log(err);
@@ -41,11 +41,13 @@ function PollProgressForm() {
     };
 
     try {
-      const pollId = pollContext?.pollId;
+      // const pollId = pollContext?.pollId;
 
-      if (pollId) {
-        fetchPollInfo(pollId);
-      }
+      // if (pollId) {
+      //   fetchPollInfo(pollId);
+      // }
+
+      fetchPollInfo('3');
 
       // TODO: pollid가 없을 때 메인 화면으로 보내주기!
     } catch (err) {
@@ -69,11 +71,7 @@ function PollProgressForm() {
             />
           </MarginContainer>
           <MarginContainer margin="0 0 4rem 0">
-            <PollProgressRadioGroup
-              pollId={pollInfo.id}
-              selectedPollItem={selectedPollItem}
-              setSelectedPollItem={setSelectedPollItem}
-            />
+            <PollProgressRadioGroup pollId={pollInfo.id} />
           </MarginContainer>
           <PollProgressSubmitButton />
         </form>
