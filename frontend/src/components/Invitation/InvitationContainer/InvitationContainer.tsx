@@ -1,61 +1,47 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import styled from '@emotion/styled';
 
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import Box from '../../common/Box/Box';
 import Logo from '../../../assets/logo.svg';
 import FlexContainer from '../../common/FlexContainer/FlexContainer';
 import InvitationButtonGroup from '../InvitationButtonGroup/InvitationButtonGroup';
-import { getIsJoinedGroup } from '../../../api/group';
-import { GroupInterface } from '../../../types/group';
+import { getInvitedGroup } from '../../../api/group';
 import { saveSessionStorageItem } from '../../../utils/storage';
 
 function InvitationContainer() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [name, setName] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isJoined, setIsJoined] = useState(false);
-  const [groupCode, setGroupCode] = useState<GroupInterface['code']>('');
   const { invitationCode } = useParams() as { invitationCode: string };
+  const {
+    data: invitedGroup,
+    isLoading,
+    isSuccess
+  } = useQuery(['invitedGroup'], () => getInvitedGroup(invitationCode), {
+    onError: (err) => {
+      if (err instanceof AxiosError) {
+        const status = err.response?.status;
 
-  useEffect(() => {
-    // TODO: 인자로 넘겨여할까? 너무 외부에 있는 변수에 의존하고 있다. 인자로 받아서 사용해주는 것이 올바른 코드가 아닐까? ex) invitationCode
-    const fetchGetIsJoinedGroup = async () => {
-      try {
-        const res = await getIsJoinedGroup(invitationCode);
-        const { groupCode, name, isJoined } = res.data;
-
-        setGroupCode(groupCode);
-        setName(name);
-        setIsJoined(isJoined);
-        setIsLoading(false);
-      } catch (err) {
-        if (err instanceof Error) {
-          const statusCode = err.message;
-
-          if (statusCode === '401') {
-            saveSessionStorageItem('redirectUrl', location.pathname);
-            navigate('/');
-            alert('로그인이 필요한 서비스입니다!');
-          }
+        if (status === 401) {
+          saveSessionStorageItem('redirectUrl', location.pathname);
+          navigate('/');
+          alert('로그인이 필요한 서비스입니다!');
         }
-
-        setIsLoading(true);
       }
-    };
-
-    fetchGetIsJoinedGroup();
-  }, []);
+    }
+  });
 
   useEffect(() => {
-    if (isJoined) {
-      navigate(`/groups/${groupCode}`);
+    if (invitedGroup?.isJoined) {
+      navigate(`/groups/${invitedGroup?.groupCode}`);
       alert('이미 속해있는 그룹의 초대장입니다~');
     }
-  }, [isJoined]);
+  }, [invitedGroup?.isJoined]);
 
   if (isLoading) return <div>로딩중</div>;
+  if (!isSuccess) return <div>실패</div>;
 
   return (
     <Box width="60rem" minHeight="65.2rem" padding="9.2rem 0">
@@ -67,7 +53,7 @@ function InvitationContainer() {
       >
         <StyledLogo src={Logo} alt="logo" />
         <StyledTitle>
-          {name}
+          {invitedGroup?.name}
           그룹으로 초대합니다
         </StyledTitle>
         <InvitationButtonGroup
@@ -75,7 +61,7 @@ function InvitationContainer() {
           // 다시 호출해서 navigate를 만드는 게 맞을까?
           navigate={navigate}
           invitationCode={invitationCode}
-          groupCode={groupCode}
+          groupCode={invitedGroup.groupCode}
         />
       </FlexContainer>
     </Box>

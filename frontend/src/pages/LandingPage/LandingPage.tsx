@@ -1,6 +1,8 @@
 import styled from '@emotion/styled';
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import {
   getLocalStorageItem,
   saveLocalStorageItem,
@@ -17,39 +19,33 @@ import { getDefaultGroup } from '../../api/group';
 function LandingPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isLoading } = useQuery(['defaultGroup'], getDefaultGroup, {
+    onSuccess: (res) => {
+      const { code: groupCode } = res;
 
-  useEffect(() => {
-    const fetchGetDefaultGroup = async () => {
-      try {
-        const res = await getDefaultGroup();
-        const { code: groupCode } = res.data;
+      navigate(`/groups/${groupCode}`);
+    },
 
-        navigate(`/groups/${groupCode}`);
-      } catch (err) {
-        if (err instanceof Error) {
-          const statusCode = err.message;
-          if (statusCode === '401') {
-            removeLocalStorageItem('token');
-            navigate('/');
+    onError: (err) => {
+      if (err instanceof AxiosError) {
+        const status = err.response?.status;
 
-            return;
-          }
+        if (status === 401) {
+          removeLocalStorageItem('token');
+          navigate('/');
 
-          if (statusCode === '404') {
-            navigate('/init');
-            console.log('랜딩페이지에서 로그인을 했지만, 속해있는 그룹이 없습니다.');
-          }
+          return;
+        }
+
+        if (status === 404) {
+          navigate('/init');
+          console.log('랜딩페이지에서 로그인을 했지만, 속해있는 그룹이 없습니다.');
         }
       }
-    };
-    // TODO: 중복 로직해결
-    // TODO: 다시 한 번 token을 가져오는
-    const token = getLocalStorageItem('token');
+    },
 
-    if (token) {
-      fetchGetDefaultGroup();
-    }
-  }, []);
+    enabled: !!getLocalStorageItem('token')
+  });
 
   useEffect(() => {
     // TODO: fetch하는 함수이지만 navigate도 해주고있다..근데 try..catch...사용하려면 이렇게밖에 못함

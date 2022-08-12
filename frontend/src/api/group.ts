@@ -1,9 +1,10 @@
 import { groupInstance as axios } from './axios';
-import { GroupInterface } from '../types/group';
+import { GroupInterface, MemberInterface, getInvitedGroupResponse } from '../types/group';
 
 const getGroups = () => axios.get('');
 
-const getGroupMembers = (groupCode: GroupInterface['code']) => axios.get(`/${groupCode}/members`);
+const getGroupMembers = (groupCode: GroupInterface['code']): Promise<Array<MemberInterface>> =>
+  axios.get(`/${groupCode}/members`).then(({ data }) => data);
 
 // TODO: '' 해결해야할듯
 const createGroup = (name: GroupInterface['name']) => axios.post('', { name });
@@ -13,9 +14,10 @@ const createInvitationCode = (groupCode: GroupInterface['code']) =>
 
 const participateGroup = (invitationCode: string) => axios.post(`/in/${invitationCode}`);
 
-const getIsJoinedGroup = (invitationCode: string) => axios.get(`/in/${invitationCode}`);
+const getInvitedGroup = (invitationCode: string): Promise<getInvitedGroupResponse> =>
+  axios.get(`/in/${invitationCode}`).then(({ data }) => data);
 
-const getDefaultGroup = () => axios.get('/default');
+const getDefaultGroup = () => axios.get('/default').then(({ data }) => data);
 
 export {
   getGroups,
@@ -23,6 +25,6 @@ export {
   getGroupMembers,
   createInvitationCode,
   participateGroup,
-  getIsJoinedGroup,
+  getInvitedGroup,
   getDefaultGroup
 };

@@ -1,6 +1,8 @@
 import styled from '@emotion/styled';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { getGroupMembers } from '../../api/group';
 import { GroupInterface, MemberInterface } from '../../types/group';
 import Avatar from '../common/Avatar/Avatar';
@@ -11,40 +13,30 @@ interface Props {
 
 function MembersProfile({ groupCode }: Props) {
   const navigate = useNavigate();
-  const [groupMembers, setGroupMembers] = useState<Array<MemberInterface>>([]);
-
-  useEffect(() => {
-    const fetchGroupMembers = async () => {
-      try {
-        if (groupCode) {
-          const res = await getGroupMembers(groupCode);
-
-          setGroupMembers(res.data);
-        }
-      } catch (err) {
-        if (err instanceof Error) {
-          const statusCode = err.message;
-
-          if (statusCode === '401') {
+  const { data: groupMembers } = useQuery(
+    ['groupMembers', groupCode],
+    () => getGroupMembers(groupCode),
+    {
+      onError: (error) => {
+        if (error instanceof AxiosError) {
+          const status = error.response?.status;
+          if (status === 401) {
             alert('로그인 해주세요~');
             navigate('/');
           }
 
-          if (statusCode === '404' || '403' || '400') {
+          if (status === 404 || 403 || 400) {
             alert('그룹이 없어요~');
             navigate('/');
           }
         }
-        console.log(err);
       }
-    };
-
-    fetchGroupMembers();
-  }, [groupCode]);
+    }
+  );
 
   return (
     <StyledContainer>
-      {groupMembers.map(({ profileUrl, name }) => (
+      {groupMembers?.map(({ profileUrl, name }) => (
         <Avatar profileUrl={profileUrl} name={name} />
       ))}
     </StyledContainer>

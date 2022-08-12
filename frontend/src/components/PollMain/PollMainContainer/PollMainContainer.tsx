@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { useQuery } from '@tanstack/react-query';
 import Box from '../../common/Box/Box';
 import PollMainStatus from '../PollMainStatus/PollMainStatus';
 import PollMainDetail from '../PollMainDetail/PollMainDetail';
@@ -10,28 +11,13 @@ import FlexContainer from '../../common/FlexContainer/FlexContainer';
 import MarginContainer from '../../common/MarginContainer/MarginContainer';
 
 import { getPolls } from '../../../api/poll';
-import { getPollsResponse } from '../../../types/poll';
 import { GroupInterface } from '../../../types/group';
 
 import PollMainButtonGroup from '../PollMainButtonGroup/PollMainButtonGroup';
 
 function PollMainContainer() {
   const { groupCode } = useParams() as { groupCode: GroupInterface['code'] };
-  const [polls, setPolls] = useState<getPollsResponse>([]);
-
-  useEffect(() => {
-    const fetchPolls = async () => {
-      const res = await getPolls(groupCode);
-      console.log(res);
-      setPolls(res.data);
-    };
-
-    try {
-      fetchPolls();
-    } catch (err) {
-      alert(err);
-    }
-  }, []);
+  const { data: polls } = useQuery(['polls', groupCode], () => getPolls(groupCode));
 
   return (
     <StyledContainer>

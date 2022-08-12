@@ -10,4 +10,9 @@ interface MemberInterface {
   profileUrl: string;
 }
 
-export { GroupInterface, MemberInterface };
+type getInvitedGroupResponse = Pick<GroupInterface, 'name'> & {
+  isJoined: boolean;
+  groupCode: GroupInterface['code'];
+};
+
+export { GroupInterface, MemberInterface, getInvitedGroupResponse };

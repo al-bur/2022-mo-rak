@@ -67,7 +67,7 @@ function AppointmentResultRanking({ groupCode, appointmentCode }: Props) {
       try {
         if (groupCode) {
           const res = await getGroupMembers(groupCode);
-          setGroupMembers(res.data);
+          setGroupMembers(res);
         }
       } catch (err) {
         if (err instanceof Error) {

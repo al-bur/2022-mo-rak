@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styled from '@emotion/styled';
 
 import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Box from '../../common/Box/Box';
 import Divider from '../../common/Divider/Divider';
 import FlexContainer from '../../common/FlexContainer/FlexContainer';
@@ -23,27 +24,12 @@ function PollResultContainer() {
     groupCode: GroupInterface['code'];
     pollCode: PollInterface['code'];
   };
-  const [poll, setPoll] = useState<getPollResponse>();
-  const [pollResult, setPollResult] = useState<getPollResultResponse>([]);
+  const poll = useQuery(['poll', pollCode, groupCode], () => getPoll(pollCode, groupCode));
+  const pollResult = useQuery(['pollResult', pollCode, groupCode], () =>
+    getPollResult(pollCode, groupCode));
 
-  useEffect(() => {
-    const fetchPoll = async (pollCode: PollInterface['code']) => {
-      const res = await getPoll(pollCode, groupCode);
-      setPoll(res.data);
-    };
-
-    const fetchPollResult = async (pollCode: PollInterface['code']) => {
-      const res = await getPollResult(pollCode, groupCode);
-      setPollResult(res.data);
-    };
-
-    try {
-      fetchPoll(pollCode);
-      fetchPollResult(pollCode);
-    } catch (err) {
-      alert(err);
-    }
-  }, []);
+  // if (poll.isLoading || pollResult.isLoading) return <div>로딩중</div>;
+  if (!poll.isSuccess || !pollResult.isSuccess) return <div>로딩중</div>;
 
   return (
     <Box width="84.4rem" padding="2rem 4.8rem 5.6rem">
@@ -53,37 +39,37 @@ function PollResultContainer() {
             <MarginContainer margin="0 0 1.4rem 0">
               <FlexContainer gap="1.2rem" alignItems="center">
                 <PollResultShareLink pollCode={pollCode} />
-                <PollResultStatus status={poll.status} />
+                <PollResultStatus status={poll.data.status} />
               </FlexContainer>
             </MarginContainer>
           </FlexContainer>
           <MarginContainer margin="0 0 1.4rem 0">
-            <StyledTitle>{poll.title}</StyledTitle>
+            <StyledTitle>{poll.data.title}</StyledTitle>
             <Divider />
           </MarginContainer>
           <MarginContainer margin="1.4rem 0">
-            <PollResultProgress pollResult={pollResult} groupCode={groupCode} />
+            <PollResultProgress pollResult={pollResult.data} groupCode={groupCode} />
           </MarginContainer>
           <MarginContainer margin="1.4rem 0">
             <PollResultDetail
-              isAnonymous={poll.isAnonymous}
-              allowedPollCount={poll.allowedPollCount}
+              isAnonymous={poll.data.isAnonymous}
+              allowedPollCount={poll.data.allowedPollCount}
             />
           </MarginContainer>
           <MarginContainer margin="0 0 4rem 0">
             <FlexContainer flexDirection="column" gap="1.2rem">
               <PollResultItemGroup
-                status={poll.status}
-                pollCode={poll.code}
+                status={poll.data.status}
+                pollCode={poll.data.code}
                 groupCode={groupCode}
-                pollResult={pollResult}
+                pollResult={pollResult.data}
               />
             </FlexContainer>
           </MarginContainer>
           <PollResultButtonGroup
-            isHost={poll.isHost}
-            status={poll.status}
-            pollCode={poll.code}
+            isHost={poll.data.isHost}
+            status={poll.data.status}
+            pollCode={poll.data.code}
             groupCode={groupCode}
           />
         </>

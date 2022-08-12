@@ -2,13 +2,15 @@ import React, { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from '@emotion/styled';
+import { useQuery } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import Box from '../../common/Box/Box';
 import Divider from '../../common/Divider/Divider';
 import MarginContainer from '../../common/MarginContainer/MarginContainer';
 import PollProgressButtonGroup from '../PollProgressButtonGroup/PollProgressButtonGroup';
 import { getPoll, progressPoll } from '../../../api/poll';
 import PollProgressItemGroup from '../PollProgressItemGroup/PollProgressItemGroup';
-import { PollInterface, SelectedPollItem, getPollResponse } from '../../../types/poll';
+import { PollInterface, SelectedPollItem } from '../../../types/poll';
 import PollProgressDetail from '../PollProgressDetail/PollProgressDetail';
 import { GroupInterface } from '../../../types/group';
 
@@ -18,7 +20,24 @@ function PollProgressForm() {
     groupCode: GroupInterface['code'];
     pollCode: PollInterface['code'];
   };
-  const [poll, setPoll] = useState<getPollResponse>();
+  const { data: poll, isLoading } = useQuery(
+    ['poll', pollCode, groupCode],
+    () => getPoll(pollCode, groupCode),
+    {
+      onSuccess: (res) => {
+        if (res.status === 'CLOSED') {
+          navigate(`/groups/${groupCode}/poll`);
+        }
+      },
+
+      onError: (err) => {
+        if (err instanceof AxiosError) {
+          alert('poll 없어~~');
+          navigate(`/groups/${groupCode}/poll`);
+        }
+      }
+    }
+  );
   const [selectedPollItems, setSelectedPollItems] = useState<Array<SelectedPollItem>>([]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -72,27 +91,7 @@ function PollProgressForm() {
     }
   };
 
-  useEffect(() => {
-    const fetchPoll = async (pollCode: PollInterface['code']) => {
-      try {
-        const res = await getPoll(pollCode, groupCode);
-
-        // TODO: res.data vs poll => 이후에 통일해줘야함
-        if (res.data.status === 'CLOSED') {
-          navigate(`/groups/${groupCode}/poll`);
-
-          return;
-        }
-
-        setPoll(res.data);
-      } catch (err) {
-        alert('poll 없어~~');
-        navigate(`/groups/${groupCode}/poll`);
-      }
-    };
-
-    fetchPoll(pollCode);
-  }, []);
+  if (isLoading) return <div>투표 정보 로딩중입니다</div>;
 
   return (
     <Box width="84.4rem" padding="6.4rem 4.8rem 5.4rem 4.8rem">
